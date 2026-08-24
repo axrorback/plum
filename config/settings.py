@@ -8,12 +8,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['plum.axror.tech','127.0.0.1','localhost']
 
-CORS_ORIGIN_ALLOW_ALL = True
-
+CSRF_TRUSTED_ORIGINS = ['https://plum.axror.tech','http://127.0.0.1:8003','http://localhost:8003']
 
 
 INSTALLED_APPS = [
