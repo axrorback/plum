@@ -6,8 +6,8 @@ from rest_framework import status
 from .services import PlumWebhookService , PlumPaymentService
 from django.db import transaction
 from .models import Order , OrderStatus
-from config import settings
-
+from .auth import PlumBasicAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 
 
@@ -85,8 +85,12 @@ class CreateOrderAPIView(APIView):
 
 class PlumWebhookAPIView(APIView):
 
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    authentication_classes = [
+        PlumBasicAuthentication,
+    ]
+    permission_classes = [
+        IsAuthenticated,
+    ]
 
     def post(self, request):
         method_serializer = PlumWebhookSerializer(
