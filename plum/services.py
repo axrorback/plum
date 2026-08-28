@@ -103,8 +103,7 @@ class PlumPaymentService:
             payload,
         )
 
-        response = requests.post(
-            cls.CREATE_INVOICE_URL,
+        response = requests.post("https://business.myuzcard.uz/api-business/Merchant/createMerchantTransaction/",
             json=payload,
             timeout=15,
         )
