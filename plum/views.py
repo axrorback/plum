@@ -8,7 +8,7 @@ from django.db import transaction
 from .models import Order , OrderStatus
 from .auth import PlumBasicAuthentication
 from rest_framework.permissions import IsAuthenticated
-
+from .responses import plum_error_response
 
 
 class CreateOrderAPIView(APIView):
@@ -108,13 +108,11 @@ class PlumCheckWebhookAPIView(APIView):
         account = data["fields"].get("account")
 
         if not account:
-            return Response(
-                {
-                    "success": False,
-                    "code": -1,
-                    "message": "Account is required.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return plum_error_response(
+                field="account",
+                uz="Hisob raqami kiritilishi shart.",
+                ru="Необходимо указать номер счёта.",
+                en="Account is required.",
             )
 
         amount = data["amount"]
@@ -131,14 +129,12 @@ class PlumCheckWebhookAPIView(APIView):
                 amount=amount,
             )
 
-        except ValueError as exc:
-            return Response(
-                {
-                    "success": False,
-                    "code": -1,
-                    "message": str(exc),
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+        except ValueError:
+            return plum_error_response(
+                field="amount",
+                uz="Ushbu summa bo‘yicha qarzdorlik topilmadi.",
+                ru="Задолженность по данной сумме не найдена.",
+                en="No debt was found for this amount.",
             )
 
         return Response(
@@ -169,13 +165,11 @@ class PlumCheckWebhookAPIView(APIView):
         )
 
         if order is None:
-            return Response(
-                {
-                    "success": False,
-                    "code": -1,
-                    "message": "Order not found.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return plum_error_response(
+                field="amount",
+                uz="Bu oy uchun qarzdorligingiz yo‘q. O‘z vaqtida to‘lov qilganingiz uchun rahmat.",
+                ru="В этом месяце у вас нет задолженности. Спасибо за своевременную оплату.",
+                en="You have no debt this month. Thank you for your timely payment.",
             )
 
         return Response(
@@ -226,14 +220,11 @@ class PlumPerformWebhookAPIView(APIView):
         )
 
         if order is None:
-            return Response(
-                {
-                    "id": str(data["id"]),
-                    "success": False,
-                    "code": -1,
-                    "message": "Order not found.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return plum_error_response(
+                field="id",
+                uz="Buyurtma topilmadi.",
+                ru="Заказ не найден.",
+                en="Order not found.",
             )
 
         # Idempotency
@@ -259,26 +250,20 @@ class PlumPerformWebhookAPIView(APIView):
                 transaction_date=data["date"],
             )
 
-        except ValueError as exc:
-            return Response(
-                {
-                    "id": str(order.uuid),
-                    "success": False,
-                    "code": -1,
-                    "message": str(exc),
-                },
-                status=status.HTTP_200_OK,
+        except ValueError:
+            return plum_error_response(
+                field="id",
+                uz="To‘lov ma’lumotlari noto‘g‘ri.",
+                ru="Некорректные данные платежа.",
+                en="Invalid payment data.",
             )
 
         except Exception:
-            return Response(
-                {
-                    "id": str(order.uuid),
-                    "success": False,
-                    "code": -1,
-                    "message": "Payment processing failed.",
-                },
-                status=status.HTTP_200_OK,
+            return plum_error_response(
+                field="id",
+                uz="To‘lovni qayta ishlashda xatolik yuz berdi.",
+                ru="Произошла ошибка при обработке платежа.",
+                en="Payment processing failed.",
             )
 
         return Response(
