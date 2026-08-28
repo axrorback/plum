@@ -7,11 +7,12 @@ from .models import Order,OrderStatus,PaymentTransaction,PaymentTransactionStatu
 
 class PlumPaymentService:
     CREATE_INVOICE_URL= settings.PLUM_CREATE_INVOICE_URL
+
     @staticmethod
     def find_order_for_check(
-        *,
-        account: str,
-        amount: int,
+            *,
+            account: str,
+            amount: int,
     ) -> Order:
 
         order = (
