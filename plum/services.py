@@ -90,162 +90,50 @@ class PlumPaymentService:
 
     @classmethod
     def create_invoice(cls, order):
+        payload = {
+            "merchantId": 2461,
+            "fields": {
+                "account": order.account,
+                "amount": order.amount,
+            },
+        }
 
-        print("========== PLUM CREATE INVOICE START ==========", flush=True)
+        url = (
+            "https://business.myuzcard.uz/"
+            "api-business/Merchant/createMerchantTransaction"
+        )
 
-        try:
-            payload = {
-                "merchantId": 2461,
-                "fields": {
-                    "account": order.account,
-                    "amount": order.amount,
-                },
-            }
+        response = requests.post(
+            url,
+            json=payload,
+            timeout=15,
+        )
 
-            print(
-                f"[PLUM] Payload: {payload}",
-                flush=True,
+        response.raise_for_status()
+
+        data = response.json()
+
+        if data.get("error"):
+            raise ValueError(
+                str(data["error"])
             )
 
-            url = (
-                "https://business.myuzcard.uz/"
-                "api-business/Merchant/createMerchantTransaction"
-            )
+        result = data["result"]
 
-            print(
-                f"[PLUM] URL: {url}",
-                flush=True,
-            )
+        order.plum_invoice_id = result["id"]
+        order.plum_unique = result["unique"]
+        order.plum_valid_to = result["validTo"]
 
-            print(
-                "[PLUM] Sending request...",
-                flush=True,
-            )
+        order.save(
+            update_fields=[
+                "plum_invoice_id",
+                "plum_unique",
+                "plum_valid_to",
+                "updated_at",
+            ]
+        )
 
-            response = requests.post(
-                url,
-                json=payload,
-                timeout=15,
-            )
-
-            print(
-                f"[PLUM] Response status: {response.status_code}",
-                flush=True,
-            )
-
-            print(
-                f"[PLUM] Response headers: {dict(response.headers)}",
-                flush=True,
-            )
-
-            print(
-                f"[PLUM] Response body: {response.text}",
-                flush=True,
-            )
-
-            print(
-                "[PLUM] Calling raise_for_status()...",
-                flush=True,
-            )
-
-            response.raise_for_status()
-
-            print(
-                "[PLUM] HTTP status is OK",
-                flush=True,
-            )
-
-            print(
-                "[PLUM] Parsing JSON...",
-                flush=True,
-            )
-
-            data = response.json()
-
-            print(
-                f"[PLUM] Parsed JSON: {data}",
-                flush=True,
-            )
-
-            if data.get("error"):
-                print(
-                    f"[PLUM] API ERROR: {data['error']}",
-                    flush=True,
-                )
-
-                raise ValueError(
-                    str(data["error"])
-                )
-
-            print(
-                "[PLUM] Getting result...",
-                flush=True,
-            )
-
-            result = data["result"]
-
-            print(
-                f"[PLUM] Result: {result}",
-                flush=True,
-            )
-
-            print(
-                "[PLUM] Saving invoice data to order...",
-                flush=True,
-            )
-
-            order.plum_invoice_id = result["id"]
-            order.plum_unique = result["unique"]
-            order.plum_valid_to = result["validTo"]
-
-            order.save(
-                update_fields=[
-                    "plum_invoice_id",
-                    "plum_unique",
-                    "plum_valid_to",
-                    "updated_at",
-                ]
-            )
-
-            print(
-                "[PLUM] Order saved successfully",
-                flush=True,
-            )
-
-            print(
-                "========== PLUM CREATE INVOICE SUCCESS ==========",
-                flush=True,
-            )
-
-            return result
-
-        except Exception as exc:
-
-            print(
-                "========== PLUM CREATE INVOICE ERROR ==========",
-                flush=True,
-            )
-
-            print(
-                f"[PLUM] Exception type: {type(exc).__name__}",
-                flush=True,
-            )
-
-            print(
-                f"[PLUM] Exception: {exc}",
-                flush=True,
-            )
-
-            import traceback
-
-            traceback.print_exc()
-
-            print(
-                "=================================================",
-                flush=True,
-            )
-
-            raise
+        return result
 
 
 
