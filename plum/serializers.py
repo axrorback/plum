@@ -18,7 +18,7 @@ class PlumPerformSerializer(serializers.Serializer):
 
 class CreateOrderSerializer(serializers.Serializer):
     account = serializers.CharField(max_length=255,)
-    user_full_name = serializers.CharField(max_length=255,)
+    full_name = serializers.CharField(max_length=255,)
     amount = serializers.IntegerField(min_value=1,)
     purpose = serializers.CharField(max_length=500)
     return_url = serializers.URLField(required=False,allow_blank=True,)
