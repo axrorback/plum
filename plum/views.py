@@ -13,7 +13,6 @@ from .responses import plum_error_response
 
 class CreateOrderAPIView(APIView):
 
-    @transaction.atomic
     def post(self, request):
         serializer = CreateOrderSerializer(
             data=request.data,
@@ -24,8 +23,6 @@ class CreateOrderAPIView(APIView):
         )
 
         data = serializer.validated_data
-
-        user = request.user
 
         order = Order.objects.create(
             account=data["account"],
@@ -81,7 +78,6 @@ class CreateOrderAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 class PlumCheckWebhookAPIView(APIView):
 
