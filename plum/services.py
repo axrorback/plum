@@ -91,7 +91,7 @@ class PlumPaymentService:
     @classmethod
     def create_invoice(cls, order):
         payload = {
-            "merchantId": int(settings.PLUM_MERCHANT_ID),
+            "merchantId": 2461,
             "fields": {
                 "account": order.account,
                 "amount": order.amount,
