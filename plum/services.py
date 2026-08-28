@@ -6,7 +6,7 @@ from .models import Order,OrderStatus,PaymentTransaction,PaymentTransactionStatu
 
 
 class PlumPaymentService:
-    CREATE_INVOICE_URL= "https://business.myuzcard.uz/api-business/Merchant/createMerchantTransaction"
+    CREATE_INVOICE_URL= "https://business.myuzcard.uz/api-business/Merchant/createMerchantTransaction/"
 
     @staticmethod
     def find_order_for_check(
