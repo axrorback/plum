@@ -104,6 +104,7 @@ class PlumCheckWebhookAPIView(APIView):
 
         data = serializer.validated_data
 
+        # Only account is required from fields.
         account = data["fields"].get("account")
 
         if not account:
@@ -118,13 +119,12 @@ class PlumCheckWebhookAPIView(APIView):
 
         amount = data["amount"]
 
-        # Balance request
+        # amount=0 is used by Plum for balance/account check.
         if amount == 0:
             return self._balance(
                 account=account,
             )
 
-        # Normal order check
         try:
             order = PlumWebhookService.check(
                 account=account,
@@ -158,37 +158,17 @@ class PlumCheckWebhookAPIView(APIView):
         )
 
     def _balance(self, *, account: str):
-        order = (
-            Order.objects
-            .filter(
-                account=account,
-                status=OrderStatus.PENDING,
-            )
-            .order_by("-created_at")
-            .first()
-        )
-
-        if order is None:
-            return Response(
-                {
-                    "success": False,
-                    "code": -1,
-                    "message": "Account not found.",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # TODO:
+        # Return the actual balance for this account.
 
         return Response(
             {
-                "id": str(order.uuid),
                 "success": True,
                 "code": 0,
                 "message": "Success",
                 "accounts": {
-                    "amount": str(order.amount),
-                    "fullName": order.user_full_name,
-                    "username": order.account,
-                    "purpose": order.purpose,
+                    "amount": "0",
+                    "username": account,
                 },
             },
             status=status.HTTP_200_OK,
