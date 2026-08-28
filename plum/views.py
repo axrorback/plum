@@ -31,7 +31,7 @@ class CreateOrderAPIView(APIView):
             account=data["account"],
             amount=data["amount"],
             purpose=data["purpose"],
-            user_full_name=user.get_full_name(),
+            user_full_name=data["full_name"],
             return_url=data.get("return_url", ""),
             callback_url=data.get("callback_url", ""),
         )
