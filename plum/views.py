@@ -90,24 +90,8 @@ class PlumCheckWebhookAPIView(APIView):
     ]
 
     def post(self, request):
-
-        print(
-            "\n========== PLUM CHECK START ==========",
-            flush=True,
-        )
-
-        print(
-            f"[CHECK] Raw request data: {request.data}",
-            flush=True,
-        )
-
         serializer = PlumCheckSerializer(
             data=request.data,
-        )
-
-        print(
-            "[CHECK] Validating serializer...",
-            flush=True,
         )
 
         serializer.is_valid(
@@ -116,25 +100,10 @@ class PlumCheckWebhookAPIView(APIView):
 
         data = serializer.validated_data
 
-        print(
-            f"[CHECK] Validated data: {data}",
-            flush=True,
-        )
-
         # Only account is required from fields.
         account = data["fields"].get("account")
 
-        print(
-            f"[CHECK] Account: {account}",
-            flush=True,
-        )
-
         if not account:
-            print(
-                "[CHECK] Account is missing.",
-                flush=True,
-            )
-
             return plum_error_response(
                 field="account",
                 uz="Hisob raqami kiritilishi shart.",
@@ -144,39 +113,11 @@ class PlumCheckWebhookAPIView(APIView):
 
         amount = data["amount"]
 
-        print(
-            f"[CHECK] Amount: {amount}",
-            flush=True,
-        )
-
         # amount=0 is used by Plum for balance/account check.
         if amount == 0:
-
-            print(
-                "[CHECK] Balance check detected.",
-                flush=True,
-            )
-
-            response = self._balance(
+            return self._balance(
                 account=account,
             )
-
-            print(
-                f"[CHECK] Balance response: {response.data}",
-                flush=True,
-            )
-
-            print(
-                "========== PLUM CHECK END ==========\n",
-                flush=True,
-            )
-
-            return response
-
-        print(
-            "[CHECK] Calling PlumWebhookService.check()...",
-            flush=True,
-        )
 
         try:
             order = PlumWebhookService.check(
@@ -184,18 +125,7 @@ class PlumCheckWebhookAPIView(APIView):
                 amount=amount,
             )
 
-            print(
-                f"[CHECK] Order found: {order.uuid}",
-                flush=True,
-            )
-
-        except ValueError as exc:
-
-            print(
-                f"[CHECK] Service error: {exc}",
-                flush=True,
-            )
-
+        except ValueError:
             return plum_error_response(
                 field="amount",
                 uz="Ushbu summa bo‘yicha qarzdorlik topilmadi.",
@@ -203,7 +133,7 @@ class PlumCheckWebhookAPIView(APIView):
                 en="No debt was found for this amount.",
             )
 
-        response = Response(
+        return Response(
             {
                 "id": str(order.uuid),
                 "success": True,
@@ -219,25 +149,7 @@ class PlumCheckWebhookAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
-        print(
-            f"[CHECK] Success response: {response.data}",
-            flush=True,
-        )
-
-        print(
-            "========== PLUM CHECK END ==========\n",
-            flush=True,
-        )
-
-        return response
-
     def _balance(self, *, account: str):
-
-        print(
-            f"[BALANCE] Searching order for account: {account}",
-            flush=True,
-        )
-
         order = (
             Order.objects
             .filter(
@@ -249,12 +161,6 @@ class PlumCheckWebhookAPIView(APIView):
         )
 
         if order is None:
-
-            print(
-                "[BALANCE] No pending order found.",
-                flush=True,
-            )
-
             return plum_error_response(
                 field="amount",
                 uz="Bu oy uchun qarzdorligingiz yo‘q. O‘z vaqtida to‘lov qilganingiz uchun rahmat.",
@@ -262,17 +168,7 @@ class PlumCheckWebhookAPIView(APIView):
                 en="You have no debt this month. Thank you for your timely payment.",
             )
 
-        print(
-            f"[BALANCE] Order found: {order.uuid}",
-            flush=True,
-        )
-
-        print(
-            f"[BALANCE] Order amount: {order.amount}",
-            flush=True,
-        )
-
-        response = Response(
+        return Response(
             {
                 "id": str(order.uuid),
                 "success": True,
@@ -287,14 +183,6 @@ class PlumCheckWebhookAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-
-        print(
-            f"[BALANCE] Success response: {response.data}",
-            flush=True,
-        )
-
-        return response
-
 class PlumPerformWebhookAPIView(APIView):
 
     authentication_classes = [
