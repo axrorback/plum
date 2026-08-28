@@ -116,10 +116,19 @@ class PlumCheckWebhookAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        amount = data["amount"]
+
+        # Balance request
+        if amount == 0:
+            return self._balance(
+                account=account,
+            )
+
+        # Normal order check
         try:
             order = PlumWebhookService.check(
                 account=account,
-                amount=data["amount"],
+                amount=amount,
             )
 
         except ValueError as exc:
@@ -128,6 +137,43 @@ class PlumCheckWebhookAPIView(APIView):
                     "success": False,
                     "code": -1,
                     "message": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "id": str(order.uuid),
+                "success": True,
+                "code": 0,
+                "message": "Success",
+                "accounts": {
+                    "amount": str(order.amount),
+                    "fullName": order.user_full_name,
+                    "username": order.account,
+                    "purpose": order.purpose,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def _balance(self, *, account: str):
+        order = (
+            Order.objects
+            .filter(
+                account=account,
+                status=OrderStatus.PENDING,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if order is None:
+            return Response(
+                {
+                    "success": False,
+                    "code": -1,
+                    "message": "Account not found.",
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
