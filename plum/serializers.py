@@ -5,7 +5,7 @@ class PlumWebhookSerializer(serializers.Serializer):
 
 
 class PlumCheckSerializer(serializers.Serializer):
-    amount = serializers.IntegerField(min_value=1,)
+    amount = serializers.IntegerField(min_value=0,)
     fields = serializers.DictField(child=serializers.CharField(allow_blank=True,))
 
 
