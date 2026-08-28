@@ -83,42 +83,17 @@ class CreateOrderAPIView(APIView):
         )
 
 
-class PlumWebhookAPIView(APIView):
+class PlumCheckWebhookAPIView(APIView):
 
     authentication_classes = [
         PlumBasicAuthentication,
     ]
+
     permission_classes = [
         IsAuthenticated,
     ]
 
     def post(self, request):
-        method_serializer = PlumWebhookSerializer(
-            data=request.data,
-        )
-
-        method_serializer.is_valid(
-            raise_exception=True,
-        )
-
-        method = method_serializer.validated_data["method"]
-
-        if method == "check":
-            return self._check(request)
-
-        if method == "perform":
-            return self._perform(request)
-
-        return Response(
-            {
-                "success": False,
-                "code": -1,
-                "message": "Unknown method.",
-            },
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    def _check(self, request):
         serializer = PlumCheckSerializer(
             data=request.data,
         )
@@ -173,8 +148,18 @@ class PlumWebhookAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+class PlumPerformWebhookAPIView(APIView):
+
+    authentication_classes = [
+        PlumBasicAuthentication,
+    ]
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
     @transaction.atomic
-    def _perform(self, request):
+    def post(self, request):
         serializer = PlumPerformSerializer(
             data=request.data,
         )
@@ -205,7 +190,7 @@ class PlumWebhookAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-
+        # Idempotency
         if order.status == "paid":
             return Response(
                 {
