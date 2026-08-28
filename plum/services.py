@@ -3,7 +3,9 @@ from django.utils import timezone
 from config import settings
 import requests
 from .models import Order,OrderStatus,PaymentTransaction,PaymentTransactionStatus
+import logging
 
+logger = logging.getLogger(__name__)
 
 class PlumPaymentService:
     CREATE_INVOICE_URL= "https://business.myuzcard.uz/api-business/Merchant/createMerchantTransaction/"
@@ -89,17 +91,32 @@ class PlumPaymentService:
     @classmethod
     def create_invoice(cls, order):
         payload = {
-            "merchantId": settings.PLUM_MERCHANT_ID,
+            "merchantId": int(settings.PLUM_MERCHANT_ID),
             "fields": {
                 "account": order.account,
                 "amount": order.amount,
             },
         }
 
+        logger.info(
+            "Plum create invoice payload: %s",
+            payload,
+        )
+
         response = requests.post(
             cls.CREATE_INVOICE_URL,
             json=payload,
             timeout=15,
+        )
+
+        logger.info(
+            "Plum response status: %s",
+            response.status_code,
+        )
+
+        logger.info(
+            "Plum response body: %s",
+            response.text,
         )
 
         response.raise_for_status()
