@@ -9,7 +9,7 @@ from .models import Order , OrderStatus
 from .auth import PlumBasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .responses import plum_error_response
-
+import requests
 
 class CreateOrderAPIView(APIView):
 
@@ -260,7 +260,15 @@ class PlumPerformWebhookAPIView(APIView):
                 ru="Произошла ошибка при обработке платежа.",
                 en="Payment processing failed.",
             )
-
+        url = order.callback_url
+        json = {
+            "external_service_id": order.account,
+            "status": "paid"
+        }
+        requests.post(
+            url,
+            json=json,
+        )
         return Response(
             {
                 "id": str(order.uuid),
