@@ -167,3 +167,17 @@ class PlumWebhookService:
             card_number=card_number,
             transaction_date=transaction_date,
         )
+    @staticmethod
+    def notify_order(
+            *,
+            order: Order,
+    ):
+        url = order.callback_url
+        json = {
+            "external_service_id": order.account,
+            "status": "paid"
+        }
+        requests.post(
+            url,
+            json=json,
+        )
