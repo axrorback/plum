@@ -167,17 +167,44 @@ class PlumWebhookService:
             card_number=card_number,
             transaction_date=transaction_date,
         )
+
     @staticmethod
-    def notify_order(
-            *,
-            order: Order,
-    ):
+    def notify_order(*, order: Order):
         url = order.callback_url
-        json = {
+
+        if not url:
+            logger.error(
+                "Callback URL missing for order %s",
+                order.uuid,
+            )
+            raise ValueError("Callback URL is missing")
+
+        payload = {
             "external_service_id": order.account,
-            "status": "paid"
+            "status": "paid",
         }
-        requests.post(
-            url,
-            json=json,
-        )
+
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                timeout=10,
+            )
+
+            logger.info(
+                "Callback response: order=%s, status=%s, body=%s",
+                order.uuid,
+                response.status_code,
+                response.text[:500],
+            )
+
+            response.raise_for_status()
+
+            return response
+
+        except requests.RequestException:
+            logger.exception(
+                "Callback failed for order %s",
+                order.uuid,
+            )
+            raise
