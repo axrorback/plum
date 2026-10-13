@@ -1,3 +1,4 @@
+from django.http.response import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from .serializers import *
@@ -259,6 +260,18 @@ class PlumPerformWebhookAPIView(APIView):
                 uz="To‘lovni qayta ishlashda xatolik yuz berdi.",
                 ru="Произошла ошибка при обработке платежа.",
                 en="Payment processing failed.",
+            )
+
+        try:
+            PlumWebhookService.notify_order(
+                order=order,
+            )
+        except ValueError:
+            return plum_error_response(
+                field="id",
+                uz="Webhook habarini yuborishda xatolik yuz berdi.",
+                ru="Произошла ошибка при отправке webhook сообщения.",
+                en="Webhook notification failed.",
             )
         return Response(
             {
