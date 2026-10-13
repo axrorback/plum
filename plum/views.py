@@ -194,7 +194,6 @@ class PlumPerformWebhookAPIView(APIView):
         IsAuthenticated,
     ]
 
-    @transaction.atomic
     def post(self, request):
         serializer = PlumPerformSerializer(
             data=request.data,
@@ -206,45 +205,45 @@ class PlumPerformWebhookAPIView(APIView):
 
         data = serializer.validated_data
 
-        order = (
-            Order.objects
-            .select_for_update()
-            .filter(
-                uuid=data["id"],
-            )
-            .first()
-        )
-
-        if order is None:
-            return plum_error_response(
-                field="id",
-                uz="Buyurtma topilmadi.",
-                ru="Заказ не найден.",
-                en="Order not found.",
-            )
-
-        # Idempotency
-        if order.status == "paid":
-            return Response(
-                {
-                    "id": str(order.uuid),
-                    "success": True,
-                    "code": 0,
-                    "message": "Success",
-                },
-                status=status.HTTP_200_OK,
-            )
-
         try:
-            PlumWebhookService.perform(
-                order=order,
-                transaction_id=data["transactionId"],
-                card_number=data.get(
-                    "cardNumber",
-                    "",
-                ),
-                transaction_date=data["date"],
-            )
+            with transaction.atomic():
+                order = (
+                    Order.objects
+                    .select_for_update()
+                    .filter(
+                        uuid=data["id"],
+                    )
+                    .first()
+                )
+
+                if order is None:
+                    return plum_error_response(
+                        field="id",
+                        uz="Buyurtma topilmadi.",
+                        ru="Заказ не найден.",
+                        en="Order not found.",
+                    )
+
+                if order.status == "paid":
+                    return Response(
+                        {
+                            "id": str(order.uuid),
+                            "success": True,
+                            "code": 0,
+                            "message": "Success",
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+
+                PlumWebhookService.perform(
+                    order=order,
+                    transaction_id=data["transactionId"],
+                    card_number=data.get(
+                        "cardNumber",
+                        "",
+                    ),
+                    transaction_date=data["date"],
+                )
 
         except ValueError:
             return plum_error_response(
@@ -262,15 +261,19 @@ class PlumPerformWebhookAPIView(APIView):
                 en="Payment processing failed.",
             )
 
-        try:
-            PlumWebhookService.notify_order(
-                order=order,
-            )
-        except Exception:
-            logger.exception(
-                "Order callback notification failed: %s",
-                order.uuid,
-            )
+        def send_notification():
+            try:
+                PlumWebhookService.notify_order(
+                    order=order,
+                )
+            except Exception:
+                logger.exception(
+                    "Order callback notification failed: %s",
+                    order.uuid,
+                )
+
+        transaction.on_commit(send_notification)
+
         return Response(
             {
                 "id": str(order.uuid),
