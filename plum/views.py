@@ -260,15 +260,6 @@ class PlumPerformWebhookAPIView(APIView):
                 ru="Произошла ошибка при обработке платежа.",
                 en="Payment processing failed.",
             )
-        url = order.callback_url
-        json = {
-            "external_service_id": order.account,
-            "status": "paid"
-        }
-        requests.post(
-            url,
-            json=json,
-        )
         return Response(
             {
                 "id": str(order.uuid),
