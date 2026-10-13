@@ -1,6 +1,4 @@
-from django.http.response import JsonResponse
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,7 +8,9 @@ from .models import Order , OrderStatus
 from .auth import PlumBasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .responses import plum_error_response
-import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CreateOrderAPIView(APIView):
 
@@ -266,12 +266,10 @@ class PlumPerformWebhookAPIView(APIView):
             PlumWebhookService.notify_order(
                 order=order,
             )
-        except ValueError:
-            return plum_error_response(
-                field="id",
-                uz="Webhook habarini yuborishda xatolik yuz berdi.",
-                ru="Произошла ошибка при отправке webhook сообщения.",
-                en="Webhook notification failed.",
+        except Exception:
+            logger.exception(
+                "Order callback notification failed: %s",
+                order.uuid,
             )
         return Response(
             {
